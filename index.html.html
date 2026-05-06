@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1980s US History Quiz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=VT323&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --neon-pink: #ff2d78;
+    --neon-cyan: #00f0ff;
+    --neon-yellow: #ffe600;
+    --neon-green: #39ff14;
+    --dark: #0a0014;
+    --card-bg: #12002a;
+    --correct: #39ff14;
+    --wrong: #ff2d78;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--dark);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,240,255,0.03) 40px, rgba(0,240,255,0.03) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(255,45,120,0.03) 40px, rgba(255,45,120,0.03) 41px);
+  }
+
+  #start-screen, #quiz-screen, #results-screen {
+    width: 100%;
+    max-width: 780px;
+    text-align: center;
+  }
+
+  .title {
+    font-family: 'Bangers', cursive;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    letter-spacing: 4px;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 20px var(--neon-yellow), 0 0 40px #ff6a00;
+    line-height: 1;
+  }
+  .subtitle {
+    font-family: 'VT323', monospace;
+    font-size: 1.5rem;
+    color: var(--neon-cyan);
+    letter-spacing: 3px;
+    margin: 8px 0 30px;
+    text-shadow: 0 0 10px var(--neon-cyan);
+  }
+  .start-btn {
+    font-family: 'Bangers', cursive;
+    font-size: 2rem;
+    letter-spacing: 3px;
+    background: transparent;
+    border: 3px solid var(--neon-pink);
+    color: var(--neon-pink);
+    padding: 14px 48px;
+    cursor: pointer;
+    border-radius: 4px;
+    text-shadow: 0 0 10px var(--neon-pink);
+    box-shadow: 0 0 20px rgba(255,45,120,0.4), inset 0 0 20px rgba(255,45,120,0.1);
+    transition: all 0.2s;
+  }
+  .start-btn:hover { background: var(--neon-pink); color: #fff; box-shadow: 0 0 40px var(--neon-pink); }
+  .question-count { font-family: 'VT323', monospace; color: #888; font-size: 1.1rem; margin-top: 16px; letter-spacing: 2px; }
+
+  .hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 10px 16px;
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 6px;
+    background: rgba(0,240,255,0.05);
+  }
+  .q-counter { font-family: 'VT323', monospace; font-size: 1.3rem; color: var(--neon-cyan); letter-spacing:2px; }
+  .score-display { font-family: 'Bangers', cursive; font-size: 1.6rem; color: var(--neon-yellow); letter-spacing:2px; }
+
+  .timer-bar-wrap { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin-bottom: 20px; overflow: hidden; }
+  .timer-bar { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--neon-cyan), var(--neon-pink)); transition: width 0.2s linear; box-shadow: 0 0 8px var(--neon-cyan); }
+
+  .question-box {
+    background: var(--card-bg);
+    border: 2px solid rgba(0,240,255,0.25);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  .question-type { font-family: 'VT323', monospace; font-size: 1rem; color: var(--neon-pink); letter-spacing: 3px; margin-bottom: 8px; }
+  .question-text { font-size: 1.15rem; font-weight: 600; line-height: 1.5; color: #f0e6ff; }
+
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .choice-btn {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 16px 14px;
+    border-radius: 8px;
+    border: 2px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.04);
+    color: #e0d0ff;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .choice-btn:hover:not(:disabled) { border-color: var(--neon-cyan); background: rgba(0,240,255,0.1); color: #fff; transform: translateY(-2px); }
+  .choice-btn.correct { border-color: var(--correct); background: rgba(57,255,20,0.15); color: var(--correct); box-shadow: 0 0 16px rgba(57,255,20,0.4); }
+  .choice-btn.wrong { border-color: var(--wrong); background: rgba(255,45,120,0.15); color: var(--wrong); }
+  .choice-btn.reveal { border-color: var(--correct); background: rgba(57,255,20,0.1); color: var(--correct); }
+  .choice-letter { display: inline-block; background: rgba(255,255,255,0.1); border-radius: 4px; width: 24px; height: 24px; line-height: 24px; text-align: center; margin-right: 8px; font-size: 0.85rem; }
+
+  .feedback-bar {
+    font-family: 'VT323', monospace;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    padding: 10px 20px;
+    border-radius: 6px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    transition: all 0.3s;
+  }
+  .feedback-bar.correct { background: rgba(57,255,20,0.15); color: var(--correct); border: 1px solid var(--correct); }
+  .feedback-bar.wrong { background: rgba(255,45,120,0.15); color: var(--wrong); border: 1px solid var(--wrong); }
+  .feedback-bar.empty { background: transparent; }
+
+  .next-btn {
+    font-family: 'Bangers', cursive;
+    font-size: 1.5rem;
+    letter-spacing: 3px;
+    background: var(--neon-cyan);
+    color: #000;
+    border: none;
+    padding: 10px 36px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: none;
+    transition: all 0.2s;
+    box-shadow: 0 0 20px rgba(0,240,255,0.5);
+  }
+  .next-btn:hover { transform: scale(1.04); box-shadow: 0 0 30px var(--neon-cyan); }
+  .next-btn.visible { display: inline-block; }
+
+  .matching-wrap { text-align: left; }
+  .match-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .match-term { background: rgba(255,230,0,0.1); border: 1px solid rgba(255,230,0,0.3); border-radius: 6px; padding: 8px 14px; flex: 1; color: var(--neon-yellow); font-weight: 600; font-size: 0.95rem; }
+  .match-select { flex: 1.5; background: rgba(0,240,255,0.07); border: 2px solid rgba(0,240,255,0.3); border-radius: 6px; padding: 8px 10px; color: #e0e0ff; font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; cursor: pointer; outline: none; }
+  .match-select.correct-match { border-color: var(--correct); color: var(--correct); }
+  .match-select.wrong-match { border-color: var(--wrong); color: var(--wrong); }
+  .check-match-btn { font-family: 'Bangers', cursive; font-size: 1.3rem; letter-spacing: 2px; background: transparent; border: 2px solid var(--neon-pink); color: var(--neon-pink); padding: 10px 28px; border-radius: 6px; cursor: pointer; margin-top: 12px; transition: all 0.2s; }
+  .check-match-btn:hover { background: var(--neon-pink); color: #fff; }
+
+  .results-title { font-family: 'Bangers', cursive; font-size: clamp(2.5rem, 8vw, 4.5rem); color: var(--neon-yellow); text-shadow: 0 0 20px var(--neon-yellow); letter-spacing: 4px; }
+  .final-score { font-family: 'VT323', monospace; font-size: 3rem; color: var(--neon-cyan); text-shadow: 0 0 10px var(--neon-cyan); margin: 10px 0; }
+  .grade-msg { font-size: 1.2rem; color: #c0b0ff; margin-bottom: 28px; }
+  .review-list { text-align: left; max-height: 340px; overflow-y: auto; margin-bottom: 24px; padding-right: 4px; }
+  .review-list::-webkit-scrollbar { width: 4px; }
+  .review-list::-webkit-scrollbar-thumb { background: var(--neon-pink); border-radius: 4px; }
+  .review-item { background: var(--card-bg); border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; border-left: 4px solid transparent; font-size: 0.95rem; }
+  .review-item.r-correct { border-left-color: var(--correct); }
+  .review-item.r-wrong { border-left-color: var(--wrong); }
+  .review-q { color: #ddd; margin-bottom: 4px; line-height:1.4; }
+  .review-answer { font-size: 0.88rem; margin-top: 4px; }
+  .review-answer span { font-weight: 700; }
+  .play-again-btn { font-family: 'Bangers', cursive; font-size: 1.8rem; letter-spacing: 3px; background: transparent; border: 3px solid var(--neon-green); color: var(--neon-green); padding: 12px 40px; cursor: pointer; border-radius: 6px; text-shadow: 0 0 10px var(--neon-green); box-shadow: 0 0 20px rgba(57,255,20,0.3); transition: all 0.2s; }
+  .play-again-btn:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 40px var(--neon-green); }
+
+  @media (max-width: 500px) {
+    .choices { grid-template-columns: 1fr; }
+    .match-item { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+
+<div id="start-screen">
+  <div class="title">★ 1980s U.S. HISTORY ★</div>
+  <div class="subtitle">◄ UNIT REVIEW QUIZ ►</div>
+  <button class="start-btn" onclick="startQuiz()">START GAME</button>
+  <div class="question-count">24 QUESTIONS • REAGAN ERA</div>
+</div>
+
+<div id="quiz-screen" style="display:none;">
+  <div class="hud">
+    <div class="q-counter" id="q-counter">Q 1 / 24</div>
+    <div class="score-display">⚡ <span id="score-val">0</span> pts</div>
+  </div>
+  <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar"></div></div>
+  <div class="question-box" id="question-box"></div>
+  <div id="choices-area"></div>
+  <div class="feedback-bar empty" id="feedback-bar"></div>
+  <button class="next-btn" id="next-btn" onclick="nextQuestion()">NEXT ▶</button>
+</div>
+
+<div id="results-screen" style="display:none;">
+  <div class="results-title">GAME OVER</div>
+  <div class="final-score" id="final-score"></div>
+  <div class="grade-msg" id="grade-msg"></div>
+  <div class="review-list" id="review-list"></div>
+  <button class="play-again-btn" onclick="restartQuiz()">↺ PLAY AGAIN</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  // 1
+  { type:"mc", q:"A liberal generally believes that...",
+    choices:["High taxes and big government","Total individual freedom without regard for social responsibility","Authoritarianism and strict control over people's lives","The government should be active in the economy and in social programs"],
+    answer:3 },
+  // 2
+  { type:"mc", q:"A conservative would agree with which of the following?",
+    choices:["Total individual freedom","Big government, high taxes","The government should be active in the economy and in social programs","Government power, particularly in the economy, should be limited"],
+    answer:3 },
+  // 3
+  { type:"mc", q:"Reagan's defense initiative was called...",
+    choices:["Star Wars","Argo","Star Trek","MAD Deterrence"],
+    answer:0 },
+  // 4
+  { type:"mc", q:"Reagan championed which economic theory?",
+    choices:["Supply-Side Economics","Keynesian Economics","Détente","Peace Through Strength"],
+    answer:0 },
+  // 5
+  { type:"mc", q:"Which of the following was a scandal during the Reagan administration?",
+    choices:["Watergate","Iran-Contra","Teapot Dome","Globalization"],
+    answer:1 },
+  // 6
+  { type:"mc", q:"Gorbachev installed a policy of 'openness' of the Soviet Union to the world. This policy was called...",
+    choices:["Perestroika","Glasnost","Collectivization","Modernization"],
+    answer:1 },
+  // 7
+  { type:"tf", q:"The radio was the primary source of entertainment in the 1980s.",
+    choices:["True","False"], answer:1 },
+  // 8
+  { type:"mc", q:"Which largely ignored epidemic happened under the Reagan administration?",
+    choices:["COVID-19","Spanish Flu","HIV/AIDS","H1N1"],
+    answer:2 },
+  // 9
+  { type:"mc", q:"Which of the following describes the culture of the 1980s?",
+    choices:["Flappers and swing music","Flashy cars, big hair, neon colors","Hippie style going against materialism","Honor and chivalry of the Southern Gentlemen"],
+    answer:1 },
+  // 10
+  { type:"tf", q:"A yuppie is described as a young urban professional in a well-paying job living in a big city.",
+    choices:["True","False"], answer:0 },
+  // 11
+  { type:"mc", q:"This organization led the fight against driving under the influence in the 1980s.",
+    choices:["MADD","Alcoholics Anonymous","NORAD","AARP"],
+    answer:0 },
+  // 12
+  { type:"tf", q:"Laws related to drug use and drug crimes were relaxed during the 1980s.",
+    choices:["True","False"], answer:1 },
+  // 13
+  { type:"tf", q:"The 1980s saw a drastic increase in the rates of incarceration.",
+    choices:["True","False"], answer:0 },
+  // 14
+  { type:"mc", q:"Which group would most likely OPPOSE the statement: 'The government should redistribute wealth to ensure economic equality'?",
+    choices:["Democrats","Conservatives","Green Party","Activists"],
+    answer:1 },
+  // 15
+  { type:"mc", q:"'Supply-side economics' suggests that the best way to boost the economy is to...",
+    choices:["Increase government spending in urban areas","Raise taxes on the wealthy to pay off the deficit","Lower taxes so people and businesses can reinvest money","Nationalize major industries"],
+    answer:2 },
+  // 16
+  { type:"mc", q:"In his First Inaugural Address, Reagan praised entrepreneurs and factory workers as 'heroes' primarily to...",
+    choices:["Motivate Americans to believe in themselves and the country","Explain the dangers of the Cold War","Criticize those who didn't serve in the military","Encourage everyone to quit their jobs and start a business"],
+    answer:0 },
+  // 17
+  { type:"mc", q:"Which of the following was NOT a hallmark of Ronald Reagan's presidency?",
+    choices:["Supply-Side Economics","Deregulation","Détente","Peace through Strength"],
+    answer:2 },
+  // 18
+  { type:"mc", q:"A major economic criticism of the Reagan administration was that...",
+    choices:["The stock market crashed and never recovered","The national debt increased significantly","The government spent too much on the 'Cities' program","Inflation reached record highs by 1989"],
+    answer:1 },
+  // 19 — matching: foreign policy
+  { type:"matching", q:"Match each 1980s foreign policy event with its description.",
+    pairs:[
+      { term:"Tiananmen Square", def:"Pro-democracy demonstration in China" },
+      { term:"Panama", def:"Military action against General Noriega regarding drug trafficking" },
+      { term:"Nicaragua", def:"Secretly arming 'Contras' to fight communist forces" },
+      { term:"Glasnost", def:"Gorbachev's policy of 'opening' the Soviet Union" }
+    ]},
+  // 20 — matching: vocabulary
+  { type:"matching", q:"Match each 1980s term with its definition.",
+    pairs:[
+      { term:"Yuppie", def:"A young, college-educated professional with a well-paying job living in a city." },
+      { term:"M.A.D.D.", def:"Mothers Against Drunk Driving — a group fighting driving under the influence." },
+      { term:"Sandra Day O'Connor", def:"The first female Supreme Court Justice, appointed by Reagan." },
+      { term:"1980s Style", def:"Characterized by neon, big hair, flashy cars, and the rise of rap music." }
+    ]},
+  // 21 — SDI: what it actually did
+  { type:"mc", q:"What did the Strategic Defense Initiative ('Star Wars') actually propose to do?",
+    choices:[
+      "Launch armed soldiers into orbit as a quick-strike force",
+      "Use space-based weapons to shoot down Soviet missiles before they hit the US",
+      "Build a permanent US military base on the Moon",
+      "Send satellites to monitor every Soviet city"
+    ],
+    answer:1 },
+  // 22 — Iran-Contra: what happened
+  { type:"mc", q:"What actually happened in the Iran-Contra Affair?",
+    choices:[
+      "Reagan was caught wiretapping his Democratic opponents",
+      "Officials secretly sold weapons to Iran and used the profits to fund Nicaraguan rebels — bypassing Congress",
+      "The CIA was caught faking intelligence reports about the Soviet Union",
+      "Reagan ordered an unauthorized invasion of Iran"
+    ],
+    answer:1 },
+  // 23 — AIDS transmission / misconceptions
+  { type:"mc", q:"Many Americans in the early 1980s had serious misconceptions about HIV/AIDS. Which of the following is TRUE about how it actually spreads?",
+    choices:[
+      "Through casual contact like handshakes or shared food",
+      "Only through intravenous drug use",
+      "Through exposure to infected blood or bodily fluids, including unprotected sex",
+      "Through contaminated water supplies"
+    ],
+    answer:2 },
+  // 24 — Tiananmen outcome
+  { type:"mc", q:"In 1989, when Chinese citizens gathered in Tiananmen Square demanding democratic reforms, the government's response was to...",
+    choices:[
+      "Hold the country's first free elections",
+      "Violently suppress the protesters, killing hundreds",
+      "Grant protesters limited voting rights",
+      "Ask the United Nations to mediate the dispute"
+    ],
+    answer:1 }
+];
+
+let current = 0, score = 0, results = [];
+let timerInterval = null, timeLeft = 0;
+const TIME_LIMIT = 22;
+
+function startQuiz() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  current = 0; score = 0; results = [];
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[current];
+  document.getElementById('q-counter').textContent = `Q ${current+1} / ${QUESTIONS.length}`;
+  document.getElementById('score-val').textContent = score;
+  document.getElementById('feedback-bar').className = 'feedback-bar empty';
+  document.getElementById('feedback-bar').textContent = '';
+  document.getElementById('next-btn').classList.remove('visible');
+
+  const qb = document.getElementById('question-box');
+  let html = `<div class="question-type">${q.type === 'matching' ? '🔗 MATCHING' : q.type === 'tf' ? '✔ TRUE / FALSE' : '❓ MULTIPLE CHOICE'}</div>`;
+  html += `<div class="question-text">${q.q}</div>`;
+  qb.innerHTML = html;
+
+  const ca = document.getElementById('choices-area');
+  if (q.type === 'mc' || q.type === 'tf') {
+    ca.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'choices';
+    const letters = ['A','B','C','D'];
+    q.choices.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.innerHTML = `<span class="choice-letter">${letters[i]}</span>${c}`;
+      btn.onclick = () => selectAnswer(i);
+      grid.appendChild(btn);
+    });
+    ca.appendChild(grid);
+    startTimer();
+  } else if (q.type === 'matching') {
+    clearInterval(timerInterval);
+    document.getElementById('timer-bar').style.width = '100%';
+    renderMatching(q);
+  }
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = TIME_LIMIT;
+  document.getElementById('timer-bar').style.width = '100%';
+  timerInterval = setInterval(() => {
+    timeLeft -= 0.2;
+    const pct = Math.max(0, (timeLeft / TIME_LIMIT) * 100);
+    document.getElementById('timer-bar').style.width = pct + '%';
+    if (timeLeft <= 0) { clearInterval(timerInterval); timeExpired(); }
+  }, 200);
+}
+
+function timeExpired() {
+  const q = QUESTIONS[current];
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+  btns[q.answer].classList.add('reveal');
+  showFeedback(false, "TIME'S UP! Correct: " + q.choices[q.answer]);
+  results.push({ q: q.q, correct: false, correctAnswer: q.choices[q.answer], yourAnswer: '(no answer)' });
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+function selectAnswer(i) {
+  clearInterval(timerInterval);
+  const q = QUESTIONS[current];
+  const btns = document.querySelectorAll('.choice-btn');
+  btns.forEach(b => b.disabled = true);
+  const isCorrect = i === q.answer;
+  btns[i].classList.add(isCorrect ? 'correct' : 'wrong');
+  if (!isCorrect) btns[q.answer].classList.add('reveal');
+  const pts = isCorrect ? 100 : 0;
+  score += pts;
+  document.getElementById('score-val').textContent = score;
+  showFeedback(isCorrect, isCorrect ? `✓ CORRECT! +${pts} pts` : `✗ WRONG — Answer: ${q.choices[q.answer]}`);
+  results.push({ q: q.q, correct: isCorrect, correctAnswer: q.choices[q.answer], yourAnswer: q.choices[i] });
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+function showFeedback(correct, msg) {
+  const fb = document.getElementById('feedback-bar');
+  fb.className = 'feedback-bar ' + (correct ? 'correct' : 'wrong');
+  fb.textContent = msg;
+}
+
+function renderMatching(q) {
+  const ca = document.getElementById('choices-area');
+  const shuffled = [...q.pairs].map(p => p.def).sort(() => Math.random() - 0.5);
+  let html = '<div class="matching-wrap">';
+  q.pairs.forEach((p, i) => {
+    html += `<div class="match-item">
+      <div class="match-term">${p.term}</div>
+      <select class="match-select" id="match-${i}">
+        <option value="">— select —</option>
+        ${shuffled.map(d => `<option value="${d}">${d.length > 65 ? d.slice(0,62)+'…' : d}</option>`).join('')}
+      </select>
+    </div>`;
+  });
+  html += `</div><button class="check-match-btn" onclick="checkMatching()">CHECK ANSWERS</button>`;
+  ca.innerHTML = html;
+}
+
+function checkMatching() {
+  const q = QUESTIONS[current];
+  let numCorrect = 0;
+  q.pairs.forEach((p, i) => {
+    const sel = document.getElementById(`match-${i}`);
+    const correct = sel.value === p.def;
+    sel.disabled = true;
+    sel.className = 'match-select ' + (correct ? 'correct-match' : 'wrong-match');
+    if (correct) numCorrect++;
+  });
+  const pts = numCorrect * 50;
+  score += pts;
+  document.getElementById('score-val').textContent = score;
+  const allCorrect = numCorrect === q.pairs.length;
+  showFeedback(allCorrect, allCorrect ? `✓ PERFECT! +${pts} pts` : `${numCorrect}/${q.pairs.length} correct — +${pts} pts`);
+  results.push({ q: q.q, correct: allCorrect, correctAnswer: 'All matched correctly', yourAnswer: `${numCorrect}/${q.pairs.length} correct` });
+  document.querySelector('.check-match-btn').disabled = true;
+  document.getElementById('next-btn').classList.add('visible');
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= QUESTIONS.length) showResults();
+  else renderQuestion();
+}
+
+function showResults() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('results-screen').style.display = 'block';
+  const maxScore = QUESTIONS.reduce((a, q) => {
+    if (q.type === 'matching') return a + q.pairs.length * 50;
+    return a + 100;
+  }, 0);
+  const pct = Math.round((score / maxScore) * 100);
+  document.getElementById('final-score').textContent = `${score} / ${maxScore} pts  (${pct}%)`;
+  const msgs = [
+    [90, "🏆 TOTALLY RADICAL! You owned the 80s!"],
+    [75, "🎸 GNARLY! Strong work, dude."],
+    [60, "📼 NOT BAD. Review the misses and try again."],
+    [0,  "🕹️ GAME OVER. Hit play again and grind those facts!"]
+  ];
+  document.getElementById('grade-msg').textContent = msgs.find(([t]) => pct >= t)[1];
+
+  const rl = document.getElementById('review-list');
+  rl.innerHTML = results.map((r, i) => `
+    <div class="review-item ${r.correct ? 'r-correct' : 'r-wrong'}">
+      <div class="review-q"><strong>Q${i+1}:</strong> ${QUESTIONS[i].q}</div>
+      <div class="review-answer">
+        ${r.correct ? '✓' : '✗'} Your answer: <span>${r.yourAnswer}</span>
+        ${!r.correct ? ` | Correct: <span style="color:var(--correct)">${r.correctAnswer}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function restartQuiz() {
+  document.getElementById('results-screen').style.display = 'none';
+  startQuiz();
+}
+</script>
+</body>
+</html>
